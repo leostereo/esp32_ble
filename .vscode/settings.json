@@ -14,5 +14,10 @@
     "idf.portWin": "COM4",
     "idf.pythonBinPathWin": "C:/Espressif/python_env/idf5.1_py3.11_env/Scripts/python.exe",
     "idf.toolsPathWin": "C:\\Espressif",
-    "idf.flashType": "UART"
+    "idf.flashType": "UART",
+    "files.associations": {
+        "*.blade.php": "html",
+        "*.svg": "html",
+        "blehr_sens.h": "c"
+    }
 }

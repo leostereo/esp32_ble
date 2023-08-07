@@ -8,6 +8,8 @@
 #include "host/util/util.h"
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
+#include "blehr_sens.h"
+
 
 static const char *tag = "NimBLE_BLE_HeartRate";
 static TimerHandle_t blehr_tx_timer;
@@ -191,6 +193,7 @@ void blehr_host_task(void *param)
 
 void app_main(void)
 {
+    int rc;
 
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
@@ -207,7 +210,11 @@ void app_main(void)
     }
     
     ble_hs_cfg.sync_cb = blehr_on_sync;
-
+    
+    
+    /* Start gatt service */
+    rc = gatt_svr_init();
+    assert(rc == 0);
 
     /* Start the task */
     nimble_port_freertos_init(blehr_host_task);
