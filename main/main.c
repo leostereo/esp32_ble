@@ -10,8 +10,15 @@
 #include "services/gap/ble_svc_gap.h"
 
 static const char *tag = "NimBLE_BLE_HeartRate";
+static TimerHandle_t blehr_tx_timer;
 static uint8_t blehr_addr_type;
 static const char *device_name = "blehr_sensor_1.0";
+static uint16_t conn_handle;
+static bool notify_state;
+uint16_t hrs_hrm_handle;
+
+static int blehr_gap_event(struct ble_gap_event *event, void *arg);
+
 
 void print_addr(const void *addr)
 {
@@ -22,8 +29,8 @@ void print_addr(const void *addr)
                 u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
 }
 
-static void
-blehr_advertise(void)
+
+static void blehr_advertise(void)
 {
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
@@ -68,11 +75,90 @@ blehr_advertise(void)
     adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
     adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
     rc = ble_gap_adv_start(blehr_addr_type, NULL, BLE_HS_FOREVER,
-                           &adv_params, NULL, NULL);
+                           &adv_params, blehr_gap_event, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "error enabling advertisement; rc=%d\n", rc);
         return;
     }
+}
+
+
+static void
+blehr_tx_hrate_stop(void)
+{
+    xTimerStop( blehr_tx_timer, 1000 / portTICK_PERIOD_MS );
+}
+
+
+/* Reset heart rate measurement */
+static void
+blehr_tx_hrate_reset(void)
+{
+    int rc;
+
+    if (xTimerReset(blehr_tx_timer, 1000 / portTICK_PERIOD_MS ) == pdPASS) {
+        rc = 0;
+    } else {
+        rc = 1;
+    }
+
+    assert(rc == 0);
+
+}
+
+
+static int
+blehr_gap_event(struct ble_gap_event *event, void *arg)
+{
+    switch (event->type) {
+    case BLE_GAP_EVENT_CONNECT:
+        /* A new connection was established or a connection attempt failed */
+        MODLOG_DFLT(INFO, "connection %s; status=%d\n",
+                    event->connect.status == 0 ? "established" : "failed",
+                    event->connect.status);
+
+        if (event->connect.status != 0) {
+            /* Connection failed; resume advertising */
+            blehr_advertise();
+        }
+        conn_handle = event->connect.conn_handle;
+        break;
+
+    case BLE_GAP_EVENT_DISCONNECT:
+        MODLOG_DFLT(INFO, "disconnect; reason=%d\n", event->disconnect.reason);
+
+        /* Connection terminated; resume advertising */
+        blehr_advertise();
+        break;
+
+    case BLE_GAP_EVENT_ADV_COMPLETE:
+        MODLOG_DFLT(INFO, "adv complete\n");
+        blehr_advertise();
+        break;
+
+    case BLE_GAP_EVENT_SUBSCRIBE:
+        MODLOG_DFLT(INFO, "subscribe event; cur_notify=%d\n value handle; "
+                    "val_handle=%d\n",
+                    event->subscribe.cur_notify, hrs_hrm_handle);
+        if (event->subscribe.attr_handle == hrs_hrm_handle) {
+            notify_state = event->subscribe.cur_notify;
+            blehr_tx_hrate_reset();
+        } else if (event->subscribe.attr_handle != hrs_hrm_handle) {
+            notify_state = event->subscribe.cur_notify;
+            blehr_tx_hrate_stop();
+        }
+        ESP_LOGI("BLE_GAP_SUBSCRIBE_EVENT", "conn_handle from subscribe=%d", conn_handle);
+        break;
+
+    case BLE_GAP_EVENT_MTU:
+        MODLOG_DFLT(INFO, "mtu update event; conn_handle=%d mtu=%d\n",
+                    event->mtu.conn_handle,
+                    event->mtu.value);
+        break;
+
+    }
+
+    return 0;
 }
 
 static void
