@@ -7,6 +7,8 @@
 #include "services/gatt/ble_svc_gatt.h"
 #include "blehr_sens.h"
 #include "esp_log.h"
+#include "rgb_led.h"
+
 
 #define TAG     "BLE_MUTLI_CONN_CENT_SVC"
 
@@ -77,6 +79,7 @@ gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
             ESP_LOG_BUFFER_HEX(TAG, data, len);
             /* Send the received data to all of peers. */
             //peer_traverse_all(gatt_svc_send_to_peers, om);
+            set_led_on();
             return 0;
         }
         goto unknown;

@@ -9,7 +9,9 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "blehr_sens.h"
+#include "rgb_led.h"
 
+#define LED 2
 
 static const char *tag = "NimBLE_BLE_HeartRate";
 static TimerHandle_t blehr_tx_timer;
@@ -193,6 +195,8 @@ void blehr_host_task(void *param)
 
 void app_main(void)
 {
+    init_rgb_led(LED);
+    
     int rc;
 
     /* Initialize NVS — it is used to store PHY calibration data */

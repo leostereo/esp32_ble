@@ -19,6 +19,7 @@
         "*.blade.php": "html",
         "*.svg": "html",
         "blehr_sens.h": "c",
-        "esp_log.h": "c"
+        "esp_log.h": "c",
+        "rgb_led.h": "c"
     }
 }
