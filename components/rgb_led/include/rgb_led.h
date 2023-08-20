@@ -5,3 +5,4 @@
 esp_err_t  init_rgb_led(uint8_t led);
 esp_err_t set_led_on(void);
 esp_err_t set_led_off(void);
+esp_err_t handle_led(uint8_t * data);

@@ -1,5 +1,9 @@
 #include <stdio.h>
+#include <string.h>
 #include "rgb_led.h"
+#define LEDOFF "apagar"
+#define LEDON "prender"
+
 
 const char * TAG = "rgb_led";
 
@@ -29,4 +33,23 @@ esp_err_t set_led_off(void)
     ESP_LOGI(TAG,"turn OFF");
     gpio_set_level(ledr,0);
     return ESP_OK;
+}
+
+esp_err_t handle_led(uint8_t * data){
+
+
+
+    ESP_LOGI(TAG,"handle_led %s\n",data);
+    
+    if (strcmp((const char *)data, LEDOFF) == 0){
+        ESP_LOGI(TAG," handle_led apagar");
+        set_led_off();
+    }else if (strcmp((const char *)data, LEDON) == 0){
+        ESP_LOGI(TAG," handle_led prender");
+        set_led_on();
+    }
+
+
+    return ESP_OK;
+
 }
